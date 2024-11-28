@@ -40,6 +40,7 @@ enum OPCODE
     LOADED,
     LOAD_FS,
     LOAD_FV,
+    DUMP_FV,
     PATCH,
     EXEC
 };
@@ -110,6 +111,12 @@ VOID PrintOPChain(struct OP_DATA *Start)
             break;
         case LOAD_FV:
             AsciiSPrint(Log,512,"%a","LOAD_FV\n\r");
+            LogToFile(LogFile,Log);
+            AsciiSPrint(Log,512,"%a","\t FileName %a\n\r", next->Name);
+            LogToFile(LogFile,Log);
+            break;
+        case DUMP_FV:
+            AsciiSPrint(Log,512,"%a","DUMP_FV\n\r");
             LogToFile(LogFile,Log);
             AsciiSPrint(Log,512,"%a","\t FileName %a\n\r", next->Name);
             LogToFile(LogFile,Log);
@@ -271,6 +278,13 @@ EFI_STATUS EFIAPI SREPEntry(IN EFI_HANDLE ImageHandle, IN EFI_SYSTEM_TABLE *Syst
                 Add_OP_CODE(Start, Prev_OP);
                 continue;
             }
+            if (AsciiStrStr(&ConfigData[curr_pos], "DumpFV"))
+            {
+                Prev_OP = AllocateZeroPool(sizeof(struct OP_DATA));
+                Prev_OP->ID = DUMP_FV;
+                Add_OP_CODE(Start, Prev_OP);
+                continue;
+            }
             if (AsciiStrStr(&ConfigData[curr_pos], "Loaded"))
             {
                 Prev_OP = AllocateZeroPool(sizeof(struct OP_DATA));
@@ -297,7 +311,7 @@ EFI_STATUS EFIAPI SREPEntry(IN EFI_HANDLE ImageHandle, IN EFI_SYSTEM_TABLE *Syst
              LogToFile(LogFile,Log);
             return EFI_INVALID_PARAMETER;
         }
-        if ((Prev_OP->ID == LOAD_FS || Prev_OP->ID == LOAD_FV || Prev_OP->ID == LOADED) && Prev_OP->Name == 0)
+        if ((Prev_OP->ID == LOAD_FS || Prev_OP->ID == LOAD_FV || Prev_OP->ID == DUMP_FV || Prev_OP->ID == LOADED) && Prev_OP->Name == 0)
         {
             AsciiSPrint(Log,512,"Found File %a \n\r", &ConfigData[curr_pos]);
              LogToFile(LogFile,Log);
@@ -399,7 +413,7 @@ EFI_STATUS EFIAPI SREPEntry(IN EFI_HANDLE ImageHandle, IN EFI_SYSTEM_TABLE *Syst
             LogToFile(LogFile,Log);
             Status = LoadFS(ImageHandle, next->Name, &ImageInfo, &AppImageHandle);
             AsciiSPrint(Log,512,"Loaded Image %r -> %x\n\r", Status, ImageInfo->ImageBase);
-             LogToFile(LogFile,Log);
+            LogToFile(LogFile,Log);
             // AsciiSPrint(Log,512,"\t FileName %a\n\r", next->ARG2);
             break;
         case LOAD_FV:
@@ -408,6 +422,12 @@ EFI_STATUS EFIAPI SREPEntry(IN EFI_HANDLE ImageHandle, IN EFI_SYSTEM_TABLE *Syst
             Status = LoadFV(ImageHandle, next->Name, &ImageInfo, &AppImageHandle, EFI_SECTION_PE32);
             AsciiSPrint(Log,512,"Loaded Image %r -> %x\n\r", Status, ImageInfo->ImageBase);
             LogToFile(LogFile,Log);
+            break;
+        case DUMP_FV:
+            AsciiSPrint(Log,512,"%a","Executing Dump FV\n\r");
+            LogToFile(LogFile,Log);
+            Status = DumpFV(ImageHandle, next->Name, &ImageInfo, EFI_SECTION_PE32);
+            AsciiSPrint(Log,512,"Dumped FV %r -> %x\n\r", Status, ImageInfo->ImageBase);
             break;
         case PATCH:
             AsciiSPrint(Log,512,"%a","Executing Patch\n\r");    

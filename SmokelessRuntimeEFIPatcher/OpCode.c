@@ -83,6 +83,72 @@ EFI_STATUS LoadFV(EFI_HANDLE ImageHandle, CHAR8 *FileName, EFI_LOADED_IMAGE_PROT
 
     return Status;
 };
+
+EFI_STATUS DumpFV(EFI_HANDLE ImageHandle, CHAR8 *FileName, EFI_LOADED_IMAGE_PROTOCOL **ImageInfo, EFI_HANDLE *AppImageHandle, EFI_SECTION_TYPE Section_Type) {
+    UINTN NumHandles;
+    UINTN Index;
+    EFI_HANDLE *SFS_Handles;
+    EFI_STATUS Status = EFI_SUCCESS;
+    EFI_BLOCK_IO_PROTOCOL *BlkIo;
+    EFI_DEVICE_PATH_PROTOCOL *FilePath;
+    Status =
+        gBS->LocateHandleBuffer(ByProtocol, &gEfiSimpleFileSystemProtocolGuid,
+                                NULL, &NumHandles, &SFS_Handles);
+
+    if (Status != EFI_SUCCESS)
+    {
+        Print(L"Could not find handles - %r\n", Status);
+        return Status;
+    }
+    Print(L"No of Handle - %d\n", NumHandles);
+
+    for (Index = 0; Index < NumHandles; Index++)
+    {
+        Status = gBS->OpenProtocol(
+            SFS_Handles[Index], &gEfiSimpleFileSystemProtocolGuid, (VOID **)&BlkIo,
+            ImageHandle, NULL, EFI_OPEN_PROTOCOL_GET_PROTOCOL);
+
+        if (Status != EFI_SUCCESS)
+        {
+            Print(L"Protocol is not supported - %r\n", Status);
+            return Status;
+        }
+
+        EFI_PHYSICAL_ADDRESS ImageBaseAddress = (EFI_PHYSICAL_ADDRESS)(*ImageInfo)->ImageBase;
+        UINTN ImageSize = (*ImageInfo)->ImageSize;
+        Print(L"Image size: %d bytes\n", ImageSize);
+
+        UINT8 *Buffer = AllocatePool(ImageSize);
+        if (Buffer == NULL) {
+            return EFI_OUT_OF_RESOURCES;
+        }
+        CopyMem(Buffer, (VOID*)ImageBaseAddress, ImageSize);
+
+        EFI_FILE_PROTOCOL *FileHandle = NULL;
+        CHAR16 FileName16[255] = {0};
+        UnicodeSPrint(FileName16, sizeof(FileName16), L"%a", FileName);
+        Status = gBS->OpenProtocol(*AppImageHandle, &gEfiLoadedImageProtocolGuid,
+                                   (VOID **)ImageInfo, ImageHandle, (VOID *)NULL,
+                                   EFI_OPEN_PROTOCOL_GET_PROTOCOL);
+        Print(L"Creating file: %s\n", FileName16);
+        if (EFI_ERROR(Status)) {
+            Print(L"Failed to create file: %r\n", Status)
+            FreePool(Buffer)
+            return Status;
+        }
+        Status = gBS->WriteFile(FileHandle, &ImageSize, Buffer);
+        Print(L"Writing %d bytes to file: %s", ImageSize, FileName16);
+        if (EFI_ERROR(Status)) {
+            Print(L"Failed to write to file: %r\n", Status);
+        }
+        Print(L"Saved %d bytes to file: %s\n", ImageSize, FileName16);
+        gBS->CloseProtocol(FileHandle);
+        FreePool(Buffer);
+
+        return Status;
+    }
+}
+
 EFI_STATUS Exec(EFI_HANDLE *AppImageHandle)
 {
     UINTN ExitDataSize;
