@@ -89,10 +89,10 @@ EFI_STATUS DumpFV(EFI_HANDLE ImageHandle, CHAR8 *FileName, EFI_LOADED_IMAGE_PROT
     UINTN Index;
     EFI_HANDLE *SFS_Handles;
     EFI_STATUS Status = EFI_SUCCESS;
-    EFI_SIMPLE_FILE_SYSTEM_PROTOCOL *fs;
-    // EFI_FILE_PROTOCOL *TargetVolumeHandle;
-    EFI_FILE_PROTOCOL *RootDir;
-    EFI_FILE_PROTOCOL *FileHandle;
+    EFI_SIMPLE_FILE_SYSTEM_PROTOCOL *fs = NULL;
+    // EFI_FILE_PROTOCOL *TargetVolumeHandle = NULL;
+    EFI_FILE_PROTOCOL *RootDir = NULL;
+    EFI_FILE_PROTOCOL *FileHandle = NULL;
     Status =
         gBS->LocateHandleBuffer(ByProtocol, &gEfiSimpleFileSystemProtocolGuid,
                                 NULL, &NumHandles, &SFS_Handles);
@@ -115,7 +115,7 @@ EFI_STATUS DumpFV(EFI_HANDLE ImageHandle, CHAR8 *FileName, EFI_LOADED_IMAGE_PROT
             return Status;
         }
 
-        EFI_FILE_PROTOCOL *WriteToVolFile;
+        EFI_FILE_PROTOCOL *WriteToVolFile = NULL;
 
         Print(L"Opening root directory on handle %d\n", Index);
         Status = fs->OpenVolume(fs, &RootDir);
