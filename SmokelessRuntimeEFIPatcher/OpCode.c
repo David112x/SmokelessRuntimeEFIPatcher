@@ -89,7 +89,7 @@ EFI_STATUS DumpFV(EFI_HANDLE ImageHandle, CHAR8 *FileName, EFI_LOADED_IMAGE_PROT
     UINTN Index;
     EFI_HANDLE *SFS_Handles;
     EFI_STATUS Status = EFI_SUCCESS;
-    EFI_BLOCK_IO_PROTOCOL *BlkIo;
+    EFI_SIMPLE_FILE_SYSTEM_PROTOCOL *fs;
     Status =
         gBS->LocateHandleBuffer(ByProtocol, &gEfiSimpleFileSystemProtocolGuid,
                                 NULL, &NumHandles, &SFS_Handles);
@@ -103,7 +103,7 @@ EFI_STATUS DumpFV(EFI_HANDLE ImageHandle, CHAR8 *FileName, EFI_LOADED_IMAGE_PROT
 
     for (Index = 0; Index < NumHandles; Index++) {
         Status = gBS->OpenProtocol(
-            SFS_Handles[Index], &gEfiSimpleFileSystemProtocolGuid, (VOID **)&BlkIo,
+            SFS_Handles[Index], &gEfiSimpleFileSystemProtocolGuid, (VOID **)&fs,
             ImageHandle, NULL, EFI_OPEN_PROTOCOL_GET_PROTOCOL);
 
         if (Status != EFI_SUCCESS)
@@ -115,7 +115,7 @@ EFI_STATUS DumpFV(EFI_HANDLE ImageHandle, CHAR8 *FileName, EFI_LOADED_IMAGE_PROT
         EFI_FILE_PROTOCOL *RootDir;
         EFI_FILE_PROTOCOL *WriteToVolFile;
 
-        Status = BlkIo->OpenVolume(BlkIo, &RootDir);
+        Status = fs->OpenVolume(fs, &RootDir);
         if (EFI_ERROR(Status)) {
             Print(L"Failed to open root directory: %r\n", Status);
             continue;
