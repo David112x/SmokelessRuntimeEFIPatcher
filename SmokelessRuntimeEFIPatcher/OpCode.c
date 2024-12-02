@@ -89,7 +89,6 @@ EFI_STATUS DumpFV(EFI_HANDLE ImageHandle, CHAR8 *FileName, EFI_LOADED_IMAGE_PROT
     UINTN Index;
     EFI_HANDLE *SFS_Handles;
     EFI_STATUS Status = EFI_SUCCESS;
-    EFI_LOAD_FILE_PROTOCOL *LoadFileProtocol;
     EFI_BLOCK_IO_PROTOCOL *BlkIo;
     EFI_DEVICE_PATH_PROTOCOL *FilePath;
     Status =
@@ -126,18 +125,24 @@ EFI_STATUS DumpFV(EFI_HANDLE ImageHandle, CHAR8 *FileName, EFI_LOADED_IMAGE_PROT
         CopyMem(Buffer, (VOID*)ImageBaseAddress, ImageSize);
 
         EFI_FILE_PROTOCOL *FileHandle = NULL;
+        EFI_FILE_PROTOCOL *Token = NULL;
         CHAR16 FileName16[255] = {0};
         UnicodeSPrint(FileName16, sizeof(FileName16), L"%a", FileName);
-        FilePath = FileDevicePath(SFS_Handles[Index], FileName16);
-        Status = FileHandle->Open(&FileHandle, EFI_FILE_MODE_WRITE, 0, FilePath); 
+        FilePath = FileDevicePath(SFS_Handles[Index]);
         Print(L"Creating file: %s\n", FileName16);
+        Status = FileHandle->Open(
+            FilePath,
+            &Token,
+            FileName16
+            EFI_FILE_MODE_CREATE,
+            EFI_FILE_SYSTEM);
         if (EFI_ERROR(Status)) {
             Print(L"Failed to create file: %r\n", Status);
             FreePool(Buffer);
             return Status;
         }
-        Status = FileHandle->Write(&FileHandle, &ImageSize, Buffer);
         Print(L"Writing %d bytes to file: %s", ImageSize, FileName16);
+        Status = FileHandle->Write(FileHandle, &ImageSize, Buffer);
         if (EFI_ERROR(Status)) {
             Print(L"Failed to write to file: %r\n", Status);
         }
