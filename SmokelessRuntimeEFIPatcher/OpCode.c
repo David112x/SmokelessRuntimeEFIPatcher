@@ -128,12 +128,12 @@ EFI_STATUS DumpFV(EFI_HANDLE ImageHandle, CHAR8 *FileName, EFI_LOADED_IMAGE_PROT
         EFI_FILE_PROTOCOL *Token = NULL;
         CHAR16 FileName16[255] = {0};
         UnicodeSPrint(FileName16, sizeof(FileName16), L"%a", FileName);
-        FilePath = FileDevicePath(SFS_Handles[Index]);
+        FilePath = FileDevicePath(SFS_Handles[Index], NULL);
         Print(L"Creating file: %s\n", FileName16);
         Status = FileHandle->Open(
             FilePath,
             &Token,
-            FileName16
+            FileName16,
             EFI_FILE_MODE_CREATE,
             EFI_FILE_SYSTEM);
         if (EFI_ERROR(Status)) {
@@ -142,7 +142,9 @@ EFI_STATUS DumpFV(EFI_HANDLE ImageHandle, CHAR8 *FileName, EFI_LOADED_IMAGE_PROT
             return Status;
         }
         Print(L"Writing %d bytes to file: %s", ImageSize, FileName16);
-        Status = FileHandle->Write(FileHandle, &ImageSize, Buffer);
+        Status = FileHandle->Write(FileHandle, 
+            &ImageSize, 
+            Buffer);
         if (EFI_ERROR(Status)) {
             Print(L"Failed to write to file: %r\n", Status);
         }
