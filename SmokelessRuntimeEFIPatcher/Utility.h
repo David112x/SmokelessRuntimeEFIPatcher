@@ -6,7 +6,6 @@
 #include <Library/DevicePathLib.h>
 #include <Library/UefiApplicationEntryPoint.h>
 #include <Library/UefiBootServicesTableLib.h>
-#include <Library/UefiBaseType.h>
 #include <Library/UefiLib.h>
 #include <Protocol/BlockIo.h>
 #include <Library/PrintLib.h>
