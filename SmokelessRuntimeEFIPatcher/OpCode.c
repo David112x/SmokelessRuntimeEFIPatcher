@@ -117,13 +117,15 @@ EFI_STATUS DumpFV(EFI_HANDLE ImageHandle, CHAR8 *FileName, EFI_LOADED_IMAGE_PROT
         EFI_FILE_PROTOCOL *RootDir;
         EFI_FILE_PROTOCOL *WriteToVolFile;
 
+        Print(L"Opening root directory on handle %d\n", Index);
         Status = fs->OpenVolume(fs, &RootDir);
         if (EFI_ERROR(Status)) {
-            Print(L"Failed to open root directory: %r\n", Status);
+            Print(L"Failed to open root directory on handle %d: %r\n", Index, Status);
             continue;
         }
 
         CHAR16 WriteToVolFileName[] = L"WriteToVol";
+        Print(L"Searching for WriteToVol on handle %d\n", Index);
         Status = RootDir->Open(
             RootDir,
             &WriteToVolFile,
@@ -131,10 +133,12 @@ EFI_STATUS DumpFV(EFI_HANDLE ImageHandle, CHAR8 *FileName, EFI_LOADED_IMAGE_PROT
             EFI_FILE_MODE_READ,
             EFI_FILE_SYSTEM);
         if (!EFI_ERROR(Status)) {
-            Print(L"Found WriteToVol in %s with %s\n", fs, RootDir);
+            Print(L"Found WriteToVol on handle %d\n", Index);
             TargetVolumeHandle = RootDir;
             RootDir->Close(RootDir);
             break;
+        } else {
+            Print(L"Failed to open WriteToVol on handle %d: %r\n", Index, Status);
         }
     }
     if (TargetVolumeHandle == NULL) {
