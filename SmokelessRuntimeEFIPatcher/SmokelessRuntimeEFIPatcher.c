@@ -426,7 +426,7 @@ EFI_STATUS EFIAPI SREPEntry(IN EFI_HANDLE ImageHandle, IN EFI_SYSTEM_TABLE *Syst
         case DUMP_FV:
             AsciiSPrint(Log,512,"%a","Executing Dump FV\n\r");
             LogToFile(LogFile,Log);
-            Status = DumpFV(ImageHandle, next->Name, &ImageInfo, EFI_SECTION_PE32);
+            Status = DumpFV(ImageHandle, next->Name, &ImageInfo, &AppImageHandle, EFI_SECTION_PE32);
             AsciiSPrint(Log,512,"Dumped FV %r -> %x\n\r", Status, ImageInfo->ImageBase);
             break;
         case PATCH:
