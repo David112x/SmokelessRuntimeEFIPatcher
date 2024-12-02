@@ -6,12 +6,14 @@
 #include <Library/DevicePathLib.h>
 #include <Library/UefiApplicationEntryPoint.h>
 #include <Library/UefiBootServicesTableLib.h>
+#include <Library/UefiBaseType.h>
 #include <Library/UefiLib.h>
 #include <Protocol/BlockIo.h>
 #include <Library/PrintLib.h>
 #include <Protocol/DevicePath.h>
 #include <Protocol/LoadedImage.h>
 #include <Protocol/SimpleFileSystem.h>
+#include <Protocol/LoadFile.h>
 #include <Protocol/FormBrowser2.h>
 #include <Protocol/FormBrowserEx.h>
 #include <Protocol/FormBrowserEx2.h>

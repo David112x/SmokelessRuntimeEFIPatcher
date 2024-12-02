@@ -89,7 +89,9 @@ EFI_STATUS DumpFV(EFI_HANDLE ImageHandle, CHAR8 *FileName, EFI_LOADED_IMAGE_PROT
     UINTN Index;
     EFI_HANDLE *SFS_Handles;
     EFI_STATUS Status = EFI_SUCCESS;
+    EFI_LOAD_FILE_PROTOCOL *LoadFileProtocol;
     EFI_BLOCK_IO_PROTOCOL *BlkIo;
+    EFI_DEVICE_PATH_PROTOCOL *FilePath;
     Status =
         gBS->LocateHandleBuffer(ByProtocol, &gEfiSimpleFileSystemProtocolGuid,
                                 NULL, &NumHandles, &SFS_Handles);
@@ -126,20 +128,24 @@ EFI_STATUS DumpFV(EFI_HANDLE ImageHandle, CHAR8 *FileName, EFI_LOADED_IMAGE_PROT
         EFI_FILE_PROTOCOL *FileHandle = NULL;
         CHAR16 FileName16[255] = {0};
         UnicodeSPrint(FileName16, sizeof(FileName16), L"%a", FileName);
-        Status = BlkIo->OpenFile(&FileHandle, EFI_FILE_MODE_WRITE_ONLY, 0, FileName16);
+        FilePath = FileDevicePath(SFS_Handles[Index], FileName16);
+        Status = FileHandle->Open(&FileHandle, EFI_FILE_MODE_WRITE, 0, FilePath); 
         Print(L"Creating file: %s\n", FileName16);
         if (EFI_ERROR(Status)) {
             Print(L"Failed to create file: %r\n", Status);
             FreePool(Buffer);
             return Status;
         }
-        Status = BlkIo->WriteFile(FileHandle, &ImageSize, Buffer);
+        Status = FileHandle->Write(&FileHandle, &ImageSize, Buffer);
         Print(L"Writing %d bytes to file: %s", ImageSize, FileName16);
         if (EFI_ERROR(Status)) {
             Print(L"Failed to write to file: %r\n", Status);
         }
         Print(L"Saved %d bytes to file: %s\n", ImageSize, FileName16);
-        gBS->CloseProtocol(FileHandle, &gEfiSimpleFileSystemProtocolGuid);
+        Status = FileHandle->Close(FileHandle);
+        if (EFI_ERROR(Status)) {
+            Print(L"Failed to close file: %r\n", Status);
+        }
         FreePool(Buffer);
     }
     return Status;
