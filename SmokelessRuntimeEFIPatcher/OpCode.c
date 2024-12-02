@@ -89,9 +89,10 @@ EFI_STATUS DumpFV(EFI_HANDLE ImageHandle, CHAR8 *FileName, EFI_LOADED_IMAGE_PROT
     UINTN Index;
     EFI_HANDLE *SFS_Handles;
     EFI_STATUS Status = EFI_SUCCESS;
-    EFI_SIMPLE_FILE_SYSTEM_PROTOCOL *fs = NULL;
-    // EFI_FILE_PROTOCOL *TargetVolumeHandle = NULL;
-    EFI_FILE_PROTOCOL *RootDir = NULL;
+    EFI_SIMPLE_FILE_SYSTEM_PROTOCOL *fs;
+    // EFI_FILE_PROTOCOL *TargetVolumeHandle;
+    EFI_FILE_PROTOCOL *RootDir;
+    EFI_FILE_PROTOCOL *FileHandle;
     Status =
         gBS->LocateHandleBuffer(ByProtocol, &gEfiSimpleFileSystemProtocolGuid,
                                 NULL, &NumHandles, &SFS_Handles);
@@ -114,7 +115,7 @@ EFI_STATUS DumpFV(EFI_HANDLE ImageHandle, CHAR8 *FileName, EFI_LOADED_IMAGE_PROT
             return Status;
         }
 
-        EFI_FILE_PROTOCOL *WriteToVolFile = NULL;
+        EFI_FILE_PROTOCOL *WriteToVolFile;
 
         Print(L"Opening root directory on handle %d\n", Index);
         Status = fs->OpenVolume(fs, &RootDir);
@@ -142,7 +143,6 @@ EFI_STATUS DumpFV(EFI_HANDLE ImageHandle, CHAR8 *FileName, EFI_LOADED_IMAGE_PROT
             return EFI_NOT_FOUND;
         }
     }
-    EFI_FILE_PROTOCOL *Token = NULL;
     EFI_PHYSICAL_ADDRESS ImageBaseAddress = (EFI_PHYSICAL_ADDRESS)(*ImageInfo)->ImageBase;
     UINTN ImageSize = (*ImageInfo)->ImageSize;
     Print(L"Image size: %d bytes\n", ImageSize);
@@ -157,9 +157,9 @@ EFI_STATUS DumpFV(EFI_HANDLE ImageHandle, CHAR8 *FileName, EFI_LOADED_IMAGE_PROT
     Print(L"Creating file: %s on handle %d\n", FileName16, RootDir);
     Status = RootDir->Open(
         RootDir,
-        &Token,
+        &FileHandle,
         FileName16,
-        EFI_FILE_MODE_CREATE | EFI_FILE_MODE_WRITE | EFI_FILE_MODE_READ,
+        EFI_FILE_MODE_CREATE | EFI_FILE_MODE_WRITE,
         0);
     if (EFI_ERROR(Status)) {
         Print(L"Failed to create file: %r on handle %d\n", Status, RootDir);
@@ -167,8 +167,8 @@ EFI_STATUS DumpFV(EFI_HANDLE ImageHandle, CHAR8 *FileName, EFI_LOADED_IMAGE_PROT
         return Status;
     }
     Print(L"Writing %d bytes to file: %s on handle %d", ImageSize, FileName16, RootDir);
-    Status = Token->Write(Token, 
-        &ImageSize, 
+    Status = FileHandle->Write(FileHandle, 
+        &ImageSize,
         Buffer);
     if (EFI_ERROR(Status)) {
         Print(L"Failed to write to file: %r on handle %d\n", Status, RootDir);
@@ -182,6 +182,8 @@ EFI_STATUS DumpFV(EFI_HANDLE ImageHandle, CHAR8 *FileName, EFI_LOADED_IMAGE_PROT
         FreePool(Buffer);
         return Status;
     }
+    FileHandle->Close(FileHandle);
+    RootDir->Close(RootDir);
     FreePool(Buffer);
     return Status;
 }
