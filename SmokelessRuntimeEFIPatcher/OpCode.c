@@ -134,7 +134,6 @@ EFI_STATUS DumpFV(EFI_HANDLE ImageHandle, CHAR8 *FileName, EFI_LOADED_IMAGE_PROT
         if (!EFI_ERROR(Status)) {
             Print(L"Found WriteToVol on handle %d\n", Index);
             // TargetVolumeHandle = Index;
-            RootDir->Close(RootDir);
             break;
         } else {
             Print(L"Failed to open WriteToVol on handle %d: %r\n", Index, Status);
