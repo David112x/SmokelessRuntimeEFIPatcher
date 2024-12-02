@@ -102,6 +102,7 @@ EFI_STATUS DumpFV(EFI_HANDLE ImageHandle, CHAR8 *FileName, EFI_LOADED_IMAGE_PROT
     }
     Print(L"No of Handle - %d\n", NumHandles);
 
+    Print(L"Searching for WriteToVol\n");
     for (Index = 0; Index < NumHandles; Index++) {
         Status = gBS->OpenProtocol(
             SFS_Handles[Index], &gEfiSimpleFileSystemProtocolGuid, (VOID **)&fs,
@@ -130,6 +131,7 @@ EFI_STATUS DumpFV(EFI_HANDLE ImageHandle, CHAR8 *FileName, EFI_LOADED_IMAGE_PROT
             EFI_FILE_MODE_READ,
             EFI_FILE_SYSTEM);
         if (!EFI_ERROR(Status)) {
+            Print(L"Found WriteToVol in %s with %s\n", fs, RootDir);
             TargetVolumeHandle = RootDir;
             RootDir->Close(RootDir);
             break;
