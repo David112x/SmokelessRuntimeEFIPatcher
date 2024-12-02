@@ -90,7 +90,6 @@ EFI_STATUS DumpFV(EFI_HANDLE ImageHandle, CHAR8 *FileName, EFI_LOADED_IMAGE_PROT
     EFI_HANDLE *SFS_Handles;
     EFI_STATUS Status = EFI_SUCCESS;
     EFI_BLOCK_IO_PROTOCOL *BlkIo;
-    EFI_DEVICE_PATH_PROTOCOL *FilePath;
     Status =
         gBS->LocateHandleBuffer(ByProtocol, &gEfiSimpleFileSystemProtocolGuid,
                                 NULL, &NumHandles, &SFS_Handles);
@@ -128,10 +127,9 @@ EFI_STATUS DumpFV(EFI_HANDLE ImageHandle, CHAR8 *FileName, EFI_LOADED_IMAGE_PROT
         EFI_FILE_PROTOCOL *Token = NULL;
         CHAR16 FileName16[255] = {0};
         UnicodeSPrint(FileName16, sizeof(FileName16), L"%a", FileName);
-        FilePath = FileDevicePath(SFS_Handles[Index], NULL);
         Print(L"Creating file: %s\n", FileName16);
         Status = FileHandle->Open(
-            FilePath,
+            FileHandle,
             &Token,
             FileName16,
             EFI_FILE_MODE_CREATE,
