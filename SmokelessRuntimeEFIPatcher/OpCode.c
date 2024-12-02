@@ -90,7 +90,7 @@ EFI_STATUS DumpFV(EFI_HANDLE ImageHandle, CHAR8 *FileName, EFI_LOADED_IMAGE_PROT
     EFI_HANDLE *SFS_Handles;
     EFI_STATUS Status = EFI_SUCCESS;
     EFI_SIMPLE_FILE_SYSTEM_PROTOCOL *fs = NULL;
-    EFI_FILE_PROTOCOL *TargetVolumeHandle = NULL;
+    // EFI_FILE_PROTOCOL *TargetVolumeHandle = NULL;
     Status =
         gBS->LocateHandleBuffer(ByProtocol, &gEfiSimpleFileSystemProtocolGuid,
                                 NULL, &NumHandles, &SFS_Handles);
@@ -133,20 +133,16 @@ EFI_STATUS DumpFV(EFI_HANDLE ImageHandle, CHAR8 *FileName, EFI_LOADED_IMAGE_PROT
             EFI_FILE_SYSTEM);
         if (!EFI_ERROR(Status)) {
             Print(L"Found WriteToVol on handle %d\n", Index);
-            TargetVolumeHandle = RootDir;
+            // TargetVolumeHandle = Index;
             RootDir->Close(RootDir);
             break;
         } else {
             Print(L"Failed to open WriteToVol on handle %d: %r\n", Index, Status);
+            Print(L"Does the file exist?\n");
             RootDir->Close(RootDir);
             return EFI_NOT_FOUND;
         }
     }
-    if (TargetVolumeHandle == NULL) {
-        Print(L"Unable to find the target volume\n");
-        return EFI_NOT_FOUND;
-    }
-
     EFI_FILE_PROTOCOL *Token = NULL;
     EFI_PHYSICAL_ADDRESS ImageBaseAddress = (EFI_PHYSICAL_ADDRESS)(*ImageInfo)->ImageBase;
     UINTN ImageSize = (*ImageInfo)->ImageSize;
@@ -159,29 +155,29 @@ EFI_STATUS DumpFV(EFI_HANDLE ImageHandle, CHAR8 *FileName, EFI_LOADED_IMAGE_PROT
     CopyMem(Buffer, (VOID*)ImageBaseAddress, ImageSize);
     CHAR16 FileName16[255] = {0};
     UnicodeSPrint(FileName16, sizeof(FileName16), L"%a", FileName);
-    Print(L"Creating file: %s on handle %s\n", FileName16, TargetVolumeHandle);
-    Status = TargetVolumeHandle->Open(
-        TargetVolumeHandle,
+    Print(L"Creating file: %s on handle %d\n", FileName16, RootDir);
+    Status = RootDir->Open(
+        RootDir,
         &Token,
         FileName16,
         EFI_FILE_MODE_CREATE | EFI_FILE_MODE_WRITE | EFI_FILE_MODE_READ,
         0);
     if (EFI_ERROR(Status)) {
-        Print(L"Failed to create file: %r on handle %s\n", Status, TargetVolumeHandle);
+        Print(L"Failed to create file: %r on handle %d\n", Status, RootDir);
         FreePool(Buffer);
         return Status;
     }
-    Print(L"Writing %d bytes to file: %s on handle %s", ImageSize, FileName16, TargetVolumeHandle);
-    Status = TargetVolumeHandle->Write(TargetVolumeHandle, 
+    Print(L"Writing %d bytes to file: %s on handle %d", ImageSize, FileName16, RootDir);
+    Status = RootDir->Write(RootDir, 
         &ImageSize, 
         Buffer);
     if (EFI_ERROR(Status)) {
-        Print(L"Failed to write to file: %r on handle %s\n", Status, TargetVolumeHandle);
+        Print(L"Failed to write to file: %r on handle %d\n", Status, RootDir);
     }
-    Print(L"Saved %d bytes to file: %s on handle %s\n", ImageSize, FileName16, TargetVolumeHandle);
-    Status = TargetVolumeHandle->Close(TargetVolumeHandle);
+    Print(L"Saved %d bytes to file: %s on handle %d\n", ImageSize, FileName16, RootDir);
+    Status = RootDir->Close(RootDir);
     if (EFI_ERROR(Status)) {
-        Print(L"Failed to close file: %r on handle %s\n", Status, TargetVolumeHandle);
+        Print(L"Failed to close file: %r on handle %d\n", Status, RootDir);
     }
     FreePool(Buffer);
     return Status;
