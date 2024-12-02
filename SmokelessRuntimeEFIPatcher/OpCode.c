@@ -134,11 +134,13 @@ EFI_STATUS DumpFV(EFI_HANDLE ImageHandle, CHAR8 *FileName, EFI_LOADED_IMAGE_PROT
             EFI_FILE_SYSTEM);
         if (!EFI_ERROR(Status)) {
             Print(L"Found WriteToVol on handle %d\n", Index);
+            WriteToVolFile->Close(WriteToVolFile);
             // TargetVolumeHandle = Index;
             break;
         } else {
             Print(L"Failed to open WriteToVol on handle %d: %r\n", Index, Status);
             Print(L"Does the file exist?\n");
+            WriteToVolFile->Close(WriteToVolFile);
             RootDir->Close(RootDir);
             return EFI_NOT_FOUND;
         }
@@ -183,7 +185,6 @@ EFI_STATUS DumpFV(EFI_HANDLE ImageHandle, CHAR8 *FileName, EFI_LOADED_IMAGE_PROT
         return Status;
     }
     FileHandle->Close(FileHandle);
-    RootDir->Close(RootDir);
     FreePool(Buffer);
     return Status;
 }
