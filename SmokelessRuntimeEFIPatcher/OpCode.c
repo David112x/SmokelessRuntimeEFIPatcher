@@ -92,7 +92,6 @@ EFI_STATUS DumpFV(EFI_HANDLE ImageHandle, CHAR8 *FileName, EFI_LOADED_IMAGE_PROT
     EFI_SIMPLE_FILE_SYSTEM_PROTOCOL *fs = NULL;
     // EFI_FILE_PROTOCOL *TargetVolumeHandle = NULL;
     EFI_FILE_PROTOCOL *RootDir = NULL;
-    EFI_FILE_PROTOCOL *FileHandle = NULL;
     Status =
         gBS->LocateHandleBuffer(ByProtocol, &gEfiSimpleFileSystemProtocolGuid,
                                 NULL, &NumHandles, &SFS_Handles);
@@ -156,6 +155,7 @@ EFI_STATUS DumpFV(EFI_HANDLE ImageHandle, CHAR8 *FileName, EFI_LOADED_IMAGE_PROT
     CopyMem(Buffer, (VOID*)ImageBaseAddress, ImageSize);
     CHAR16 FileName16[255] = {0};
     UnicodeSPrint(FileName16, sizeof(FileName16), L"%a", FileName);
+    EFI_FILE_PROTOCOL *FileHandle = NULL;
     Print(L"Creating file: %s on handle %d\n", FileName16, RootDir);
     Status = RootDir->Open(
         RootDir,
@@ -169,6 +169,7 @@ EFI_STATUS DumpFV(EFI_HANDLE ImageHandle, CHAR8 *FileName, EFI_LOADED_IMAGE_PROT
         return Status;
     }
     Print(L"Writing %d bytes to file: %s on handle %d", ImageSize, FileName16, RootDir);
+    Print(L"File is using handle %d\n", FileHandle);
     Status = FileHandle->Write(FileHandle, 
         &ImageSize,
         Buffer);
@@ -178,13 +179,13 @@ EFI_STATUS DumpFV(EFI_HANDLE ImageHandle, CHAR8 *FileName, EFI_LOADED_IMAGE_PROT
         return Status;
     }
     Print(L"Saved %d bytes to file: %s on handle %d\n", ImageSize, FileName16, RootDir);
+    FileHandle->Close(FileHandle);
     Status = RootDir->Close(RootDir);
     if (EFI_ERROR(Status)) {
         Print(L"Failed to close file: %r on handle %d\n", Status, RootDir);
         FreePool(Buffer);
         return Status;
     }
-    FileHandle->Close(FileHandle);
     FreePool(Buffer);
     return Status;
 }
