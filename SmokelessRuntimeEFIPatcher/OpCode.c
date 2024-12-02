@@ -167,16 +167,20 @@ EFI_STATUS DumpFV(EFI_HANDLE ImageHandle, CHAR8 *FileName, EFI_LOADED_IMAGE_PROT
         return Status;
     }
     Print(L"Writing %d bytes to file: %s on handle %d", ImageSize, FileName16, RootDir);
-    Status = RootDir->Write(RootDir, 
+    Status = Token->Write(Token, 
         &ImageSize, 
         Buffer);
     if (EFI_ERROR(Status)) {
         Print(L"Failed to write to file: %r on handle %d\n", Status, RootDir);
+        FreePool(Buffer);
+        return Status;
     }
     Print(L"Saved %d bytes to file: %s on handle %d\n", ImageSize, FileName16, RootDir);
     Status = RootDir->Close(RootDir);
     if (EFI_ERROR(Status)) {
         Print(L"Failed to close file: %r on handle %d\n", Status, RootDir);
+        FreePool(Buffer);
+        return Status;
     }
     FreePool(Buffer);
     return Status;
