@@ -89,8 +89,8 @@ EFI_STATUS DumpFV(EFI_HANDLE ImageHandle, CHAR8 *FileName, EFI_LOADED_IMAGE_PROT
     UINTN Index;
     EFI_HANDLE *SFS_Handles;
     EFI_STATUS Status = EFI_SUCCESS;
-    EFI_SIMPLE_FILE_SYSTEM_PROTOCOL *fs;
-    EFI_FILE_PROTOCOL *TargetVolumeHandle;
+    EFI_SIMPLE_FILE_SYSTEM_PROTOCOL *fs = NULL;
+    EFI_FILE_PROTOCOL *TargetVolumeHandle = NULL;
     Status =
         gBS->LocateHandleBuffer(ByProtocol, &gEfiSimpleFileSystemProtocolGuid,
                                 NULL, &NumHandles, &SFS_Handles);
@@ -113,8 +113,8 @@ EFI_STATUS DumpFV(EFI_HANDLE ImageHandle, CHAR8 *FileName, EFI_LOADED_IMAGE_PROT
             return Status;
         }
 
-        EFI_FILE_PROTOCOL *RootDir;
-        EFI_FILE_PROTOCOL *WriteToVolFile;
+        EFI_FILE_PROTOCOL *RootDir = NULL;
+        EFI_FILE_PROTOCOL *WriteToVolFile = NULL;
 
         Print(L"Opening root directory on handle %d\n", Index);
         Status = fs->OpenVolume(fs, &RootDir);
@@ -138,6 +138,8 @@ EFI_STATUS DumpFV(EFI_HANDLE ImageHandle, CHAR8 *FileName, EFI_LOADED_IMAGE_PROT
             break;
         } else {
             Print(L"Failed to open WriteToVol on handle %d: %r\n", Index, Status);
+            RootDir->Close(RootDir);
+            return EFI_NOT_FOUND;
         }
     }
     if (TargetVolumeHandle == NULL) {
@@ -145,7 +147,7 @@ EFI_STATUS DumpFV(EFI_HANDLE ImageHandle, CHAR8 *FileName, EFI_LOADED_IMAGE_PROT
         return EFI_NOT_FOUND;
     }
 
-    EFI_FILE_PROTOCOL *Token;
+    EFI_FILE_PROTOCOL *Token = NULL;
     EFI_PHYSICAL_ADDRESS ImageBaseAddress = (EFI_PHYSICAL_ADDRESS)(*ImageInfo)->ImageBase;
     UINTN ImageSize = (*ImageInfo)->ImageSize;
     Print(L"Image size: %d bytes\n", ImageSize);
@@ -157,7 +159,7 @@ EFI_STATUS DumpFV(EFI_HANDLE ImageHandle, CHAR8 *FileName, EFI_LOADED_IMAGE_PROT
     CopyMem(Buffer, (VOID*)ImageBaseAddress, ImageSize);
     CHAR16 FileName16[255] = {0};
     UnicodeSPrint(FileName16, sizeof(FileName16), L"%a", FileName);
-    Print(L"Creating file: %s\n", FileName16);
+    Print(L"Creating file: %s on handle %s\n", FileName16, TargetVolumeHandle);
     Status = TargetVolumeHandle->Open(
         TargetVolumeHandle,
         &Token,
@@ -165,21 +167,21 @@ EFI_STATUS DumpFV(EFI_HANDLE ImageHandle, CHAR8 *FileName, EFI_LOADED_IMAGE_PROT
         EFI_FILE_MODE_CREATE | EFI_FILE_MODE_WRITE | EFI_FILE_MODE_READ,
         0);
     if (EFI_ERROR(Status)) {
-        Print(L"Failed to create file: %r\n", Status);
+        Print(L"Failed to create file: %r on handle %s\n", Status, TargetVolumeHandle);
         FreePool(Buffer);
         return Status;
     }
-    Print(L"Writing %d bytes to file: %s", ImageSize, FileName16);
+    Print(L"Writing %d bytes to file: %s on handle %s", ImageSize, FileName16, TargetVolumeHandle);
     Status = TargetVolumeHandle->Write(TargetVolumeHandle, 
         &ImageSize, 
         Buffer);
     if (EFI_ERROR(Status)) {
-        Print(L"Failed to write to file: %r\n", Status);
+        Print(L"Failed to write to file: %r on handle %s\n", Status, TargetVolumeHandle);
     }
-    Print(L"Saved %d bytes to file: %s\n", ImageSize, FileName16);
+    Print(L"Saved %d bytes to file: %s on handle %s\n", ImageSize, FileName16, TargetVolumeHandle);
     Status = TargetVolumeHandle->Close(TargetVolumeHandle);
     if (EFI_ERROR(Status)) {
-        Print(L"Failed to close file: %r\n", Status);
+        Print(L"Failed to close file: %r on handle %s\n", Status, TargetVolumeHandle);
     }
     FreePool(Buffer);
     return Status;
