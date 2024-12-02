@@ -102,7 +102,6 @@ EFI_STATUS DumpFV(EFI_HANDLE ImageHandle, CHAR8 *FileName, EFI_LOADED_IMAGE_PROT
     }
     Print(L"No of Handle - %d\n", NumHandles);
 
-    Print(L"Searching for WriteToVol\n");
     for (Index = 0; Index < NumHandles; Index++) {
         Status = gBS->OpenProtocol(
             SFS_Handles[Index], &gEfiSimpleFileSystemProtocolGuid, (VOID **)&fs,
@@ -163,7 +162,7 @@ EFI_STATUS DumpFV(EFI_HANDLE ImageHandle, CHAR8 *FileName, EFI_LOADED_IMAGE_PROT
         TargetVolumeHandle,
         &Token,
         FileName16,
-        EFI_FILE_MODE_CREATE,
+        EFI_FILE_MODE_CREATE | EFI_FILE_MODE_WRITE,
         EFI_FILE_SYSTEM);
     if (EFI_ERROR(Status)) {
         Print(L"Failed to create file: %r\n", Status);
