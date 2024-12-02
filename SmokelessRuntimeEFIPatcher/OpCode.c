@@ -162,8 +162,8 @@ EFI_STATUS DumpFV(EFI_HANDLE ImageHandle, CHAR8 *FileName, EFI_LOADED_IMAGE_PROT
         TargetVolumeHandle,
         &Token,
         FileName16,
-        EFI_FILE_MODE_CREATE | EFI_FILE_MODE_WRITE,
-        EFI_FILE_SYSTEM);
+        EFI_FILE_MODE_CREATE | EFI_FILE_MODE_WRITE | EFI_FILE_MODE_READ,
+        0);
     if (EFI_ERROR(Status)) {
         Print(L"Failed to create file: %r\n", Status);
         FreePool(Buffer);
