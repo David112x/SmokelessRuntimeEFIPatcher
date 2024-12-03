@@ -122,7 +122,6 @@ EFI_STATUS DumpFV(EFI_HANDLE ImageHandle, CHAR8 *FileName, EFI_LOADED_IMAGE_PROT
             Print(L"Failed to open root directory on handle %d: %r\n", Index, Status);
             continue;
         }
-
         CHAR16 WriteToVolFileName[] = L"WriteToVol";
         Print(L"Searching for WriteToVol on handle %d\n", Index);
         Status = RootDir->Open(
@@ -138,16 +137,15 @@ EFI_STATUS DumpFV(EFI_HANDLE ImageHandle, CHAR8 *FileName, EFI_LOADED_IMAGE_PROT
             break;
         } else {
             Print(L"Failed to open WriteToVol on handle %d: %r\n", Index, Status);
-            Print(L"Does the file exist?\n");
             WriteToVolFile->Close(WriteToVolFile);
             RootDir->Close(RootDir);
             return EFI_NOT_FOUND;
         }
     }
+    EFI_FILE_PROTOCOL *FileHandle = NULL;
     EFI_PHYSICAL_ADDRESS ImageBaseAddress = (EFI_PHYSICAL_ADDRESS)(*ImageInfo)->ImageBase;
     UINTN ImageSize = (*ImageInfo)->ImageSize;
     Print(L"Image size: %d bytes\n", ImageSize);
-
     UINT8 *Buffer = AllocatePool(ImageSize);
     if (Buffer == NULL) {
         return EFI_OUT_OF_RESOURCES;
@@ -155,21 +153,19 @@ EFI_STATUS DumpFV(EFI_HANDLE ImageHandle, CHAR8 *FileName, EFI_LOADED_IMAGE_PROT
     CopyMem(Buffer, (VOID*)ImageBaseAddress, ImageSize);
     CHAR16 FileName16[255] = {0};
     UnicodeSPrint(FileName16, sizeof(FileName16), L"%a", FileName);
-    EFI_FILE_PROTOCOL *FileHandle = NULL;
     Print(L"Creating file: %s on handle %d\n", FileName16, RootDir);
     Status = RootDir->Open(
         RootDir,
         &FileHandle,
         FileName16,
-        EFI_FILE_MODE_CREATE | EFI_FILE_MODE_WRITE,
+        EFI_FILE_MODE_CREATE | EFI_FILE_MODE_WRITE | EFI_FILE_MODE_READ,
         0);
     if (EFI_ERROR(Status)) {
         Print(L"Failed to create file: %r on handle %d\n", Status, RootDir);
         FreePool(Buffer);
         return Status;
     }
-    Print(L"Writing %d bytes to file: %s on handle %d", ImageSize, FileName16, RootDir);
-    Print(L"File is using handle %d\n", FileHandle);
+    Print(L"Writing %d bytes to file: %s on handle %d", ImageSize, FileName16, FileHandle);
     Status = FileHandle->Write(FileHandle, 
         &ImageSize,
         Buffer);
