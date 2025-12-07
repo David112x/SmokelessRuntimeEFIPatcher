@@ -2,4 +2,4 @@
 
 # Smokeless Runtime EFI Patcher (SREP)
 
-Under development, more details coming up soon.
+No longer under development.
