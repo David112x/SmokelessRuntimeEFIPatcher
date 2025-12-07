@@ -29,7 +29,7 @@ jobs:
     - name: Build
       working-directory: edk2
       run: "source edksetup.sh && build -b RELEASE -t GCC5 -p SmokelessRuntimeEFIPatcher/SmokelessRuntimeEFIPatcher.dsc -a X64 -s"
-    - uses: actions/upload-artifact@v3.1.0
+    - uses: actions/upload-artifact@v4
       with:
         name: "SREP"
         path: edk2/Build/SmokelessRuntimeEFIPatcher/RELEASE_GCC5/X64/SmokelessRuntimeEFIPatcher.efi
